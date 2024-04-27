@@ -1,73 +1,77 @@
-from typing import Any
-
-import yaml
-import numpy as np
-from numpy.typing import NDArray
-
-from src.common import ProblemCase
+from time import perf_counter
 
 
-class Stack:
-    """LIFO queue"""
+class Maze:
+    def __init__(self, list_view: list[list[str]]) -> None:
+        self.list_view = list_view
+        self.start_j = None
+        for j, sym in enumerate(self.list_view[0]):
+            if sym == "O":
+                self.start_j = j
 
-    def __init__(self, max_n: int, dtype: Any) -> None:
-        self._array: NDArray = np.zeros((max_n,), dtype=dtype)  # internal array
-        self._top_i: int = -1  # index of the most recently inserted element
+    @classmethod
+    def from_file(cls, filename):
+        list_view = []
+        with open(filename, "r") as f:
+            for l in f.readlines():
+                list_view.append(list(l.strip()))
+        obj = cls(list_view)
+        return obj
 
-    def empty(self) -> bool: # Пустой ли стек
-        return self._top_i == -1
+    def print(self, path="") -> None:
+        # Find the path coordinates
+        i = 0  # in the (i, j) pair, i is usually reserved for rows and j is reserved for columns
+        j = self.start_j
+        path_coords = set()
+        for move in path:
+            i, j = _shift_coordinate(i, j, move)
+            path_coords.add((i, j))
+        # Print maze + path
+        for i, row in enumerate(self.list_view):
+            for j, sym in enumerate(row):
+                if (i, j) in path_coords:
+                    print("+ ", end="")  # NOTE: end is used to avoid linebreaking
+                else:
+                    print(f"{sym} ", end="")
+            print()  # linebreak
 
-    def push(self, x: Any) -> None:
-        """Complexity: O(1)"""
-        if self._top_i + 1 == len(self._array): # Стек полный
-            raise StackOverflowException("Stack is full")
-        self._top_i += 1
-        self._array[self._top_i] = x
+def solve(maze: Maze) -> None:
+    path = ""  # solution as a string made of "L", "R", "U", "D"
+    start = (0, maze.start_j)  # Стартовая позиция, где start_j - индекс столбца
+    visited = set([start])  # Посещенные ячейки
+    queue = [(start, "")]  # Очередь для BFS
 
-    def pop(self) -> Any:
-        """Complexity: O(1)"""
-        if self.empty():
-            raise StackUnderflowException("Stack is empty")
-        x = self._array[self._top_i]
-        self._top_i -= 1
-        return x
+    while queue:
+        (i, j), path_so_far = queue.pop()  # Извлекаем первый элемент из очереди
+        if maze.list_view[i][j] == "X":  # Является ли текущая позиция выходом
+            path = path_so_far
+            break
+        for move in ["L", "R", "U", "D"]:
+            new_i, new_j = _shift_coordinate(i, j, move)
+            if maze.list_view[new_i][new_j] != "#" and (new_i, new_j) not in visited:
+                visited.add((new_i, new_j))
+                queue.append(((new_i, new_j), path_so_far + move))  # Добавляем в конец очереди
 
-
-class StackUnderflowException(BaseException):
-    pass
-
-
-class StackOverflowException(BaseException):
-    pass
+    print(f"Found: {path}")
+    maze.print(path)
 
 
-def get_starting_symbol(sym: str) -> str:
-    if sym == ")":
-        return "("
-    elif sym == "]":
-        return "["
-    elif sym == "}":
-        return "{"
-    else:
-        raise ValueError(f'Unknown parenthesis: "{sym}"')
+def _shift_coordinate(i: int, j: int, move: str) -> tuple[int, int]:
+    if move == "L":
+        j -= 1
+    elif move == "R":
+        j += 1
+    elif move == "U":
+        i -= 1
+    elif move == "D":
+        i += 1
+    return i, j
 
-
-def are_parentheses_valid(s: str) -> bool:
-    stack = Stack(len(s), str)
-    for sym in s:
-        if sym in "([{": # Если символ является открывающей скобкой, то он помещается в стек
-            stack.push(sym)
-        elif sym in ")]}":
-            if stack.empty() or stack.pop() != get_starting_symbol(sym): # Cтек пуст или последняя открывающая скобка в стеке не соответствует закрывающей скобке
-                return False
-    return stack.empty()
 
 if __name__ == "__main__":
-    # Let's solve Valid Parentheses problem from leetcode.com:
-    # https://leetcode.com/problems/valid-parentheses/
-    cases = []
-    with open("practicum_3/homework/basic/valid_parentheses_cases.yaml", "r") as f:
-        cases = yaml.safe_load(f)
-    for c in cases:
-        res = are_parentheses_valid(c["input"])
-        print(f"Input: {c['input']}. Output: {res}. Expected output: {c['output']}")
+    maze = Maze.from_file("practicum_3/homework/basic/maze_1.txt")
+    t_start = perf_counter()
+    solve(maze)
+    t_end = perf_counter()
+    print(f"Elapsed time: {t_end - t_start} sec")
+    
