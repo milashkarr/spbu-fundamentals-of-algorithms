@@ -10,12 +10,25 @@ TEST_GRAPH_FILES = [
 
 
 def has_cycles(g: nx.Graph):
-     cycles = nx.cycle_basis(G)
-     if len(cycles) > 0:  # Если метод возвращает непустой список, то цикл существует
-        return True
-     else:
+    visited = set()  # Множество посещенных вершин
+
+    def dfs(node, parent):
+        visited.add(node)
+        for neighbor in g[node]:
+            if neighbor not in visited:
+                if dfs(neighbor, node):
+                    return True
+            elif neighbor != parent:
+                # Если вершина уже посещена и не является предком текущей вершины, то найден цикл
+                return True
         return False
 
+    # Проверяем все компоненты связности графа
+    for node in g.nodes():
+        if node not in visited:
+            if dfs(node, None):
+                return True
+    return False
 
 if __name__ == "__main__":
     for filename in TEST_GRAPH_FILES:
