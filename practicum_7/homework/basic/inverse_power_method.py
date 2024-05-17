@@ -29,4 +29,3 @@ if __name__ == "__main__":
         ]
     )
     eigvals = inverse_power_method(A, n_iters=10)
-    print(eigvals)
