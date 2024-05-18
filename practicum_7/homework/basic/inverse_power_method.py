@@ -5,18 +5,21 @@ from src.common import NDArrayFloat
 
 
 def inverse_power_method(A: NDArrayFloat, n_iters: int) -> NDArrayFloat:
-    u_k = np.random.rand(A.shape[1]) # Создаем рандомный вектор
+    u_k = np.random.rand(A.shape[1])  # Создаем рандомный вектор
     u_k = u_k / np.linalg.norm(u_k)
 
+    history = []  # Список для сохранения истории минимальных собственных чисел
+
     for _ in range(n_iters):  # Следующий вектор
-        pre_u_kk = np.linalg.solve(A, u_k)
+        pre_u_kk = np.linalg.solve(A, u_k)  # Решаем систему линейных уравнений Ax = u_k => x = A^(-1) * u_k
         A_u_k_norm = np.linalg.norm(pre_u_kk)
         u_k = pre_u_kk / A_u_k_norm
 
-    # Вычисляем приближение к наименьшему по модулю собственному числу матрицы A
-    eigenvalue = np.linalg.norm(np.dot(A, u_k)) / np.linalg.norm(u_k) 
+        # Вычисляем приближение к наименьшему по модулю собственному числу матрицы A
+        eigenvalue = np.linalg.norm(np.dot(A, u_k)) / np.linalg.norm(u_k)  # ||Au_k|| / ||u_k||
+        history.append(eigenvalue)
 
-    return eigenvalue
+    return history
 
 
 if __name__ == "__main__":
