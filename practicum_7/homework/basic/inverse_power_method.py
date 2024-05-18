@@ -1,7 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.common import NDArrayFloat
+
+from numpy.typing import NDArray
+NDArrayFloat = NDArray[np.float_]
+
 
 
 def inverse_power_method(A: NDArrayFloat, n_iters: int) -> NDArrayFloat:
